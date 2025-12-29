@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Voice Emotion Capture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <p class="eyebrow">Speech Emotion</p>
+        <h1>Capture voice, reveal emotion.</h1>
+        <p class="lede">
+          Record a short clip, send it to the model, and visualize emotion
+          probabilities instantly.
+        </p>
+        <div class="hero-meta">
+          <div>
+            <span class="meta-label">Format</span>
+            <span class="meta-value">WAV 16-bit PCM</span>
+          </div>
+          <div>
+            <span class="meta-label">Sample rate</span>
+            <span class="meta-value" id="sampleRate">--</span>
+          </div>
+          <div>
+            <span class="meta-label">Length</span>
+            <span class="meta-value" id="duration">00:00</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="card" data-reveal>
+          <div class="card-header">
+            <h2>Recorder</h2>
+            <span class="status" id="status">Ready</span>
+          </div>
+
+          <div class="controls">
+            <button class="btn primary" id="startBtn">Start recording</button>
+            <button class="btn ghost" id="stopBtn" disabled>
+              Stop recording
+            </button>
+          </div>
+
+          <div class="audio-panel">
+            <audio id="playback" controls></audio>
+            <div class="file-meta" id="fileMeta">No file yet.</div>
+          </div>
+
+          <div class="controls">
+            <button class="btn dark" id="analyzeBtn" disabled>Analyze</button>
+          </div>
+
+          <p class="hint">
+            Backend should accept multipart form data at
+            <code>/api/analyze</code> with field <code>file</code>, then return
+            JSON emotion scores.
+          </p>
+        </section>
+
+        <section class="card" data-reveal>
+          <div class="card-header">
+            <h2>Emotion probabilities</h2>
+            <span class="status" id="resultStatus">Waiting</span>
+          </div>
+
+          <div class="results" id="results">
+            <div class="empty">No analysis yet.</div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="backdrop">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
