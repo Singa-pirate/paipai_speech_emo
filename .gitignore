@@ -1,0 +1,14 @@
+# data
+/data/raw/
+!/data/raw/README.md
+
+# outputs
+/checkpoints/
+/outputs/
+*.pt
+*.log
+
+# python
+__pycache__/
+*.pyc
+.venv/

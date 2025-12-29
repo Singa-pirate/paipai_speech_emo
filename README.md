@@ -7,55 +7,110 @@
 
 ---
 
+## 训练快速开始（仅 Stage 1，ChEAVD 還沒拿到）
+
+> 如果没有 CHEAVD，直接跑 Stage 1 就能用。
+
+### 0) 安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+### 1) 确认 CASIA 位置
+
+当前数据放在：
+
+```
+data/raw/CASIA/CASIA中文语音情感识别/CASIA database/
+```
+
+如果你的路径不同，后面的 `--input_dir` 改成你的实际路径。
+
+### 2) 生成 manifest
+
+```bash
+python scripts/prepare_manifest.py \
+  --mode folder \
+  --input_dir "data/raw/CASIA/CASIA中文语音情感识别/CASIA database" \
+  --output_csv data/splits/casia/all.csv \
+  --domain_id 0 \
+  --relative_to data/raw
+```
+
+### 3) 切分 train/val/test（speaker-disjoint）
+
+```bash
+python scripts/split_manifest.py \
+  --input_csv data/splits/casia/all.csv \
+  --output_dir data/splits/casia \
+  --val_ratio 0.15 \
+  --test_ratio 0.15
+```
+
+已生成的分割文件在：`data/splits/casia/`（`train.csv` / `val.csv` / `test.csv`），如需重新切分可重复执行上面命令。
+
+### 4) 开始训练 Stage 1
+
+```bash
+python scripts/train_stage1.py
+```
+
+- 没有 GPU 会自动 fallback 到 CPU（很慢）。
+- Windows 如果卡住，改 `configs/stage1_casia.yaml` 的 `training.num_workers: 0`。
+
+---
+
+## Stage 2（可选）
+
+只有当你拿到 CHEAVD/自然情绪数据时才需要：
+
+1. 放入 `data/raw/cheavd/`
+2. 用 `scripts/prepare_manifest.py` 生成 manifest
+3. 更新 `configs/stage2_cheavd.yaml` 的路径
+4. 运行：`python scripts/train_stage2.py`
+
+---
+
+## 推理测试（单文件）
+
+```bash
+python scripts/predict.py \
+  --checkpoint checkpoints/stage1/best.pt \
+  --audio /path/to/test.wav \
+  --device cpu
+```
+
+---
+
 ## 前端使用
 
-1. 直接用瀏覽器開啟 `demo/index.html`
-2. 點擊 **Start recording** / **Stop recording**
-3. 點擊 **Analyze** 送到後端情緒模型
+1. 打开 `demo/index.html`
+2. 点击 **Start recording** / **Stop recording**
+3. 点击 **Analyze** 调用后端模型
 
-後端預設 API：`POST /api/analyze`，`multipart/form-data`，欄位 `file`。
-
----
-
-## 訓練 Pipeline
-
-訓練流程與資料格式已整理在：
-
-- `docs/pipeline.md`
-
-包含：
-- CSV manifest 格式
-- speaker-disjoint split
-- Stage 1 / Stage 2 訓練
-- 評估與推理指令
+后端默认 API：`POST /api/analyze`，`multipart/form-data`，字段 `file`。
 
 ---
 
-## 專案結構
+## 文档入口
+
+- 训练完整说明：`docs/pipeline.md`
+- 数据集存放说明：`data/raw/README.md`
+
+---
+
+## 专案结构
 
 ```
 paipai_speech_emo/
-├── demo/                 # 前端錄音展示
+├── demo/                 # 前端录音展示
 ├── configs/              # Stage 1 / Stage 2 設定檔
 ├── src/                  # dataset / model / training code
 ├── scripts/              # 訓練、評估、資料處理入口
-├── data/                 # label map / split CSV
+├── data/                 # label map / split CSV / raw data
 ├── docs/                 # Pipeline 文件
 ├── checkpoints/          # 模型輸出
 ├── outputs/              # metrics / logs
 └── README.md
 ```
-
----
-
-## 依賴
-
-```
-pip install -r requirements.txt
-```
-
----
-
-- Stage 1：`python scripts/train_stage1.py`
-- Stage 2：`python scripts/train_stage2.py`
-- 主要文件：`docs/pipeline.md`

@@ -1,6 +1,6 @@
 ﻿# 訓練 Pipeline 說明（Stage 1 / Stage 2）
 
-此目錄提供可直接交給訓練同事使用的最小可跑 pipeline。分兩階段：
+此目錄提供可直接交給訓練同事使用的最小可跑 pipeline。分兩階段（沒有 CHEAVD 可先只跑 Stage 1）：
 
 - **Stage 1 (CASIA Emotional)**：跑通資料流、loss、prompt、head。
 - **Stage 2 (CHEAVD / 自然情緒)**：混訓 + Domain Adaptation 提升泛化。
@@ -31,7 +31,21 @@ python scripts/prepare_manifest.py \
   --mode folder \
   --input_dir /path/to/casia \
   --output_csv data/splits/casia/all.csv \
-  --domain_id 0
+  --domain_id 0 \
+  --relative_to data/raw
+```
+
+CASIA 目錄常見結構：`<speaker>/<emotion>/<wav>`，已支援 speaker 自動抓取（預設 `--speaker_level 2`）。
+
+實際示例（本機 CASIA 路徑）：
+
+```bash
+python scripts/prepare_manifest.py \
+  --mode folder \
+  --input_dir "data/raw/CASIA/CASIA中文语音情感识别/CASIA database" \
+  --output_csv data/splits/casia/all.csv \
+  --domain_id 0 \
+  --relative_to data/raw
 ```
 
 ### 產生 train/val/test split（speaker-disjoint）
@@ -43,6 +57,8 @@ python scripts/split_manifest.py \
   --val_ratio 0.15 \
   --test_ratio 0.15
 ```
+
+若 speaker 數量很少，腳本會確保 val/test 至少各 1 個 speaker（保留至少 1 個作為 train）。
 
 ---
 
@@ -72,6 +88,7 @@ python scripts/train_stage1.py
 - 搭配 Prompt Tokens (`model.n_prompt`)
 - 使用 Transformer + MLP Head
 - Loss：CrossEntropy + label smoothing
+- `data.root_dir` 預設為 `data/raw`，CSV 建議用相對路徑
 
 輸出：
 - `checkpoints/stage1/best.pt`
@@ -79,7 +96,7 @@ python scripts/train_stage1.py
 
 ---
 
-## 4. Stage 2（CHEAVD / 自然情緒）
+## 4. Stage 2（CHEAVD / 自然情緒，可選）
 
 設定檔：`configs/stage2_cheavd.yaml`
 
@@ -93,7 +110,7 @@ python scripts/train_stage2.py
 - CASIA + CHEAVD 混訓
 - Domain Adaptation（Gradient Reversal）
 - 強化增強策略
- - 可用 `train_weights` / `train_domains` 控制混訓比例與 domain id
+- 可用 `train_weights` / `train_domains` 控制混訓比例與 domain id
 
 ---
 

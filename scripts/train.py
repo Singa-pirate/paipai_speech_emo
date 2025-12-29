@@ -1,4 +1,11 @@
-﻿import argparse
+﻿#!/usr/bin/env python3
+"""情感分類模型主訓練腳本
+
+該腳本負責加載配置、構建數據集和數據加載器、初始化模型、優化器和調度器，
+並執行完整的訓練流程，包括訓練、驗證和測試。
+"""
+
+import argparse
 import sys
 from pathlib import Path
 
@@ -20,6 +27,18 @@ from src.models.domain import DomainClassifier
 
 
 def as_list(value):
+    """將值轉換為列表形式
+    
+    如果值為None，返回空列表
+    如果值已經是列表，直接返回
+    否則將值封裝在列表中返回
+    
+    Args:
+        value: 要轉換的值
+    
+    Returns:
+        轉換後的列表
+    """
     if value is None:
         return []
     if isinstance(value, list):
@@ -28,6 +47,18 @@ def as_list(value):
 
 
 def build_dataset(cfg, csv_path, label_map, domain_id, mode):
+    """構建情感分類數據集
+    
+    Args:
+        cfg: 配置字典
+        csv_path: CSV文件路徑
+        label_map: 標籤映射文件路徑
+        domain_id: 領域ID
+        mode: 數據集模式 (train/val/test)
+    
+    Returns:
+        構建完成的EmotionDataset對象
+    """
     data_cfg = cfg["data"]
     return EmotionDataset(
         csv_path=csv_path,
@@ -47,6 +78,21 @@ def build_dataset(cfg, csv_path, label_map, domain_id, mode):
 
 
 def build_train_loader(cfg):
+    """構建訓練數據加載器
+    
+    支持多個訓練CSV文件、標籤映射和領域ID的配置
+    如果提供了多個數據集，會自動進行合併
+    支持設置數據集權重，用於處理不平衡數據
+    
+    Args:
+        cfg: 配置字典
+    
+    Returns:
+        訓練數據加載器和訓練數據集列表
+    
+    Raises:
+        ValueError: 當配置不合法時拋出
+    """
     data_cfg = cfg["data"]
     train_csvs = as_list(data_cfg.get("train_csv"))
     if not train_csvs:
@@ -101,6 +147,18 @@ def build_train_loader(cfg):
 
 
 def build_eval_loader(cfg, split):
+    """構建評估數據加載器
+    
+    用於構建驗證集(val)或測試集(test)的數據加載器
+    如果配置中沒有指定相應的CSV文件，返回None
+    
+    Args:
+        cfg: 配置字典
+        split: 數據集分割名稱 (val/test)
+    
+    Returns:
+        評估數據加載器，如果沒有配置則返回None
+    """
     data_cfg = cfg["data"]
     csv_path = data_cfg.get(f"{split}_csv")
     if not csv_path:
@@ -121,6 +179,21 @@ def build_eval_loader(cfg, split):
 
 
 def build_optimizer(model, cfg, domain_classifier=None):
+    """構建優化器
+    
+    為模型的不同參數組設置不同的學習率：
+    - 編碼器(backbone)參數
+    - 分類頭(head)參數
+    - 可選的領域分類器參數（用於領域適應）
+    
+    Args:
+        model: 情感分類模型
+        cfg: 配置字典
+        domain_classifier: 領域分類器，用於領域適應（可選）
+    
+    Returns:
+        構建完成的AdamW優化器
+    """
     train_cfg = cfg["training"]
     encoder_params, head_params = model.get_param_groups()
     lr_backbone = train_cfg.get("lr_backbone", train_cfg.get("lr", 1e-4))
@@ -144,6 +217,20 @@ def build_optimizer(model, cfg, domain_classifier=None):
 
 
 def build_scheduler(optimizer, cfg):
+    """構建學習率調度器
+    
+    根據配置選擇合適的學習率調度器
+    目前支持的調度器：
+    - cosine: CosineAnnealingLR
+    - none: 不使用調度器，返回None
+    
+    Args:
+        optimizer: 優化器對象
+        cfg: 配置字典
+    
+    Returns:
+        學習率調度器對象，如果不使用調度器則返回None
+    """
     train_cfg = cfg["training"]
     if train_cfg.get("scheduler", "none") == "cosine":
         return torch.optim.lr_scheduler.CosineAnnealingLR(

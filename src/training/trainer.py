@@ -1,4 +1,9 @@
-﻿import json
+﻿"""訓練器模塊
+
+提供模型訓練、評估、檢查點保存和加載功能
+用於管理完整的模型訓練流程
+"""
+import json
 from pathlib import Path
 
 import torch
@@ -8,6 +13,15 @@ from .metrics import compute_metrics
 
 
 def move_batch_to_device(batch, device):
+    """將批次數據移動到指定設備
+
+    Args:
+        batch: 批次數據字典
+        device: 目標設備（"cpu" 或 "cuda"）
+
+    Returns:
+        移動到指定設備後的批次數據字典
+    """
     return {
         "features": batch["features"].to(device),
         "lengths": batch["lengths"].to(device),
@@ -32,6 +46,26 @@ def train_one_epoch(
     domain_grl=1.0,
     domain_criterion=None,
 ):
+    """訓練模型一個epoch
+
+    Args:
+        model: 情感分類模型
+        loader: 訓練數據加載器
+        optimizer: 優化器
+        criterion: 主損失函數
+        device: 運算設備
+        num_classes: 類別數量
+        logger: 日誌記錄器
+        log_every: 日誌記錄間隔
+        max_grad_norm: 梯度裁剪閾值
+        domain_classifier: 領域分類器（可選）
+        domain_lambda: 領域損失權重
+        domain_grl: 梯度反轉層係數
+        domain_criterion: 領域分類損失函數
+
+    Returns:
+        訓練指標字典
+    """
     model.train()
     if domain_classifier:
         domain_classifier.train()
@@ -83,6 +117,20 @@ def train_one_epoch(
 
 
 def evaluate(model, loader, criterion, device, num_classes, domain_classifier=None, domain_criterion=None):
+    """評估模型性能
+
+    Args:
+        model: 情感分類模型
+        loader: 測試數據加載器
+        criterion: 主損失函數
+        device: 運算設備
+        num_classes: 類別數量
+        domain_classifier: 領域分類器（可選）
+        domain_criterion: 領域分類損失函數
+
+    Returns:
+        評估指標字典
+    """
     model.eval()
     if domain_classifier:
         domain_classifier.eval()
@@ -119,6 +167,18 @@ def evaluate(model, loader, criterion, device, num_classes, domain_classifier=No
 
 
 def save_checkpoint(path, model, optimizer, epoch, metrics, label_list, config, domain_classifier=None):
+    """保存模型檢查點
+
+    Args:
+        path: 檢查點保存路徑
+        model: 情感分類模型
+        optimizer: 優化器
+        epoch: 當前epoch數
+        metrics: 訓練指標
+        label_list: 類別標籤列表
+        config: 模型配置
+        domain_classifier: 領域分類器（可選）
+    """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -135,6 +195,17 @@ def save_checkpoint(path, model, optimizer, epoch, metrics, label_list, config, 
 
 
 def load_checkpoint(path, model, device, domain_classifier=None):
+    """加載模型檢查點
+
+    Args:
+        path: 檢查點路徑
+        model: 情感分類模型
+        device: 運算設備
+        domain_classifier: 領域分類器（可選）
+
+    Returns:
+        檢查點數據字典
+    """
     checkpoint = torch.load(path, map_location=device)
     model.load_state_dict(checkpoint["model_state"], strict=True)
     if domain_classifier is not None and "domain_state" in checkpoint:
@@ -143,6 +214,12 @@ def load_checkpoint(path, model, device, domain_classifier=None):
 
 
 def save_metrics(path, metrics):
+    """保存評估指標到JSON文件
+
+    Args:
+        path: 保存路徑
+        metrics: 指標字典
+    """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:

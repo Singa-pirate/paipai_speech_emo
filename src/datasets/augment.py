@@ -1,10 +1,24 @@
-﻿import random
+"""音頻數據增強模塊
+
+提供多種音頻數據增強技術，用於訓練階段提高模型的泛化能力
+包括加噪、時間偏移和速度擾動等操作
+"""
+import random
 
 import torch
 import torchaudio
 
 
 def apply_noise(waveform, noise_std):
+    """向波形添加高斯噪聲
+
+    Args:
+        waveform: 輸入音頻波形，形狀為 (channels, samples)
+        noise_std: 噪聲標準差，控制噪聲強度
+
+    Returns:
+        添加噪聲後的波形，形狀與輸入相同
+    """
     if noise_std <= 0:
         return waveform
     noise = torch.randn_like(waveform) * noise_std
@@ -12,6 +26,15 @@ def apply_noise(waveform, noise_std):
 
 
 def apply_time_shift(waveform, max_shift):
+    """對波形進行時間偏移
+
+    Args:
+        waveform: 輸入音頻波形，形狀為 (channels, samples)
+        max_shift: 最大偏移比例 (0~1)，實際偏移樣本數為 max_shift * 總樣本數
+
+    Returns:
+        時間偏移後的波形，形狀與輸入相同
+    """
     if max_shift <= 0:
         return waveform
     shift = int(random.uniform(-max_shift, max_shift) * waveform.shape[-1])
@@ -21,6 +44,16 @@ def apply_time_shift(waveform, max_shift):
 
 
 def apply_speed_perturb(waveform, sample_rate, speeds):
+    """對波形進行速度擾動（改變播放速度）
+
+    Args:
+        waveform: 輸入音頻波形，形狀為 (channels, samples)
+        sample_rate: 原始采樣率
+        speeds: 速度因子列表，例如 [0.9, 1.0, 1.1]
+
+    Returns:
+        速度擾動後的波形，長度可能改變但采樣率保持不變
+    """
     if not speeds:
         return waveform
     speed = random.choice(speeds)
@@ -33,6 +66,20 @@ def apply_speed_perturb(waveform, sample_rate, speeds):
 
 
 def apply_augmentations(waveform, sample_rate, config):
+    """根據配置應用多種增強技術的組合
+
+    Args:
+        waveform: 輸入音頻波形，形狀為 (channels, samples)
+        sample_rate: 采樣率
+        config: 增強配置字典，包含以下鍵：
+            - enabled: 是否啟用增強
+            - speed_perturb: 速度因子列表
+            - time_shift: 最大時間偏移比例
+            - noise_std: 噪聲標準差
+
+    Returns:
+        應用增強後的波形，形狀與輸入相同
+    """
     if not config or not config.get("enabled", False):
         return waveform
     waveform = apply_speed_perturb(
