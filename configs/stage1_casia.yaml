@@ -5,19 +5,15 @@ output_dir: outputs
 checkpoint_dir: checkpoints/stage1
 
 labels:
-  - angry
-  - happy
-  - sad
+  - negative
+  - positive
   - neutral
-  - fear
-  - disgust
-  - surprise
 
 data:
   train_csv: data/splits/casia/train.csv
   val_csv: data/splits/casia/val.csv
   test_csv: data/splits/casia/test.csv
-  label_map: data/label_maps/casia_to_unified.json
+  label_map: data/label_maps/casia_to_3class.json
   sample_rate: 16000
   n_mels: 80
   max_duration: 6.0
